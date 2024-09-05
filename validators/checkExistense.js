@@ -1,5 +1,4 @@
 const connection = require('../config/db');
-const mysql = require('mysql2');
 
 /**
  * Método que confere se o ID externo que será vinculado, existe na respectiva tabela.

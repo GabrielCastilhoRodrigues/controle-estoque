@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const connection = require('../config/db');
+
 const productStockModel = require('../models/productStock');
 const { productStockSchema } = require('../validators/productStockValidator');
 const { ENTITIES, RETURN_CODES, MESSAGES } = require('../constants');
@@ -31,7 +33,6 @@ const validateProductSctock = (req, res, next) => {
  */
 router.post('/', validateProductSctock, async (req, res) => {
     const product = req.body;
-    console.log(product);
 
     const productExists = await checkIdExists(ENTITIES.PRODUCT, product.product_id);
     if (!productExists) {
@@ -51,8 +52,20 @@ router.post('/', validateProductSctock, async (req, res) => {
     productStockModel.createProductStocks(product, (err, result) => {
         if (err)
             return res.status(RETURN_CODES.INTERNAL_SERVER_ERROR).json({ message: err.message });
-        res.status(201).json({ id: result.insertId, ...product });
+        res.status(RETURN_CODES.CREATED).json({ id: result.insertId, ...product });
     });
+
+    /**
+     * Atualiza o Produto com a quantidade inserida.
+     */
+    const updateQuery = 'UPDATE ' + ENTITIES.PRODUCT + ' SET quantity = quantity + ? WHERE id = ?';
+    connection.execute(updateQuery, [product.quantity, product.product_id], (err, result) => {
+        if (err) {
+            return connection.rollback(() => callback(err));
+        }
+    });
+
+    connection.commit();
 });
 
 /**
