@@ -50,6 +50,5 @@ module.exports = {
     getAllProductsStocks,
     getProductStocksById,
     createProductStocks,
-    updateProductStocks,
     deleteProductStocks
 };

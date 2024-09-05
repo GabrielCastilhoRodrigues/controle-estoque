@@ -65,6 +65,5 @@ module.exports = {
     getStockLocationById,
     createStockLocation,
     updateStockLocation,
-    deleteStockLocation,
-    StockLocation
+    deleteStockLocation
 };
