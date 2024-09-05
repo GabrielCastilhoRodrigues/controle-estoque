@@ -1,5 +1,7 @@
 const express = require('express');
 const productRoutes = require('./routes/productRoutes');
+const productStockRoutes = require('./routes/productStockRoutes');
+const stockLocationRoutes = require('./routes/stockLocationRoutes');
 const cors = require('cors');
 require('dotenv').config();
 
@@ -12,12 +14,8 @@ app.use(express.json()); // Para analisar JSON
 
 // Rotas
 app.use('/api/products', productRoutes);
-
-/**Hello word 
-app.get('/', (req, res) =>{
-    res.send('Hello World');
-});
-*/
+app.use('/api/stockLocation', stockLocationRoutes);
+app.use('/api/productStock', productStockRoutes);
 
 // Iniciar o servidor
 app.listen(PORT, () => {
