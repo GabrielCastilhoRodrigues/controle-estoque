@@ -3,6 +3,7 @@ const router = express.Router();
 const productModel = require('../models/product');
 const { productSchema } = require('../validators/productValidator');
 const { RETURN_CODES, MESSAGES } = require('../constants');
+const { checkRegisterExists } = require('../validators/checkExistense');
 
 /**
  * Realiza a validação dos campos do Produto.
@@ -18,10 +19,16 @@ const { RETURN_CODES, MESSAGES } = require('../constants');
  *   Se os campos da requisição estão válidos ou não.
  */
 const validateProduct = (req, res, next) => {
+    if (req.body.hasOwnProperty('quantity')) {
+        return res.status(RETURN_CODES.BAD_REQUEST)
+            .json({ message: MESSAGES.PRODUCT_QUANTITY_NOT_ACCESS });
+    }
+
     const { error } = productSchema.validate(req.body);
     if (error) {
         return res.status(RETURN_CODES.BAD_REQUEST).json({ message: error.details[0].message });
     }
+
     next();
 };
 
@@ -65,7 +72,7 @@ router.get('/:id', (req, res) => {
 /**
  * Com o ID informado, é localizado o produto e o mesmo é atualizado com os dados informados.
  */
-router.put('/:id', (req, res) => {
+router.put('/:id', validateProduct, (req, res) => {
     const { id } = req.params;
     const product = req.body;
     productModel.updateProduct(id, product, (err) => {
@@ -78,11 +85,18 @@ router.put('/:id', (req, res) => {
 /**
  * Remove o Produto correspondente ao ID informado.
  */
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     const { id } = req.params;
+    const existsProductStock = await checkRegisterExists('product_id', id);
+
+    if (existsProductStock) {
+        return res.status(RETURN_CODES.INTERNAL_SERVER_ERROR)
+            .json({ message: MESSAGES.PRODUCT_CANNOT_DELETE_STOCK_EXISTS });
+    }
+
     productModel.deleteProduct(id, (err) => {
-        if (err) return res.status(RETURN_CODES.INTERNAL_SERVER_ERROR)
-            .json({ message: err.message });
+        if (err)
+            return res.status(RETURN_CODES.INTERNAL_SERVER_ERROR).json({ message: err.message });
         res.json({ message: MESSAGES.PRODUCT_DELETE_SUCESS });
     });
 });

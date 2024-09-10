@@ -3,6 +3,7 @@ const router = express.Router();
 const stockLocationModel = require('../models/stockLocation');
 const { stockLocationSchema } = require('../validators/stockLocationValidator');
 const { RETURN_CODES, MESSAGES } = require('../constants');
+const { checkRegisterExists } = require('../validators/checkExistense');
 
 /**
  * Realiza a validação dos campos do Local de estoque.
@@ -17,7 +18,7 @@ const { RETURN_CODES, MESSAGES } = require('../constants');
  * @returns
  *   Se os campos da requisição estão válidos ou não.
  */
-const validateProductStock = (req, res, next) => {
+const validateStockLocation = (req, res, next) => {
     const { error } = stockLocationSchema.validate(req.body);
     if (error) {
         return res.status(RETURN_CODES.BAD_REQUEST).json({ message: error.details[0].message });
@@ -28,7 +29,7 @@ const validateProductStock = (req, res, next) => {
 /**
  * Realiza a criação do Local de estoque.
  */
-router.post('/', validateProductStock, (req, res) => {
+router.post('/', validateStockLocation, (req, res) => {
     const product = req.body;
     stockLocationModel.createStockLocation(product, (err, result) => {
         if (err)
@@ -67,15 +68,12 @@ router.get('/:id', (req, res) => {
  * Com o ID informado, é localizado o Local de estoque e o mesmo é atualizado com os dados
  * informados.
  */
-router.put('/:id', (req, res) => {
+router.put('/:id', validateStockLocation, (req, res) => {
     const { id } = req.params;
     const product = req.body;
     stockLocationModel.updateStockLocation(id, product, (err) => {
         if (err)
             return res.status(RETURN_CODES.INTERNAL_SERVER_ERROR).json({ message: err.message });
-        if (results.length === 0)
-            return res.status(RETURN_CODES.NOT_FOUND)
-                .json({ message: MESSAGES.STOCK_LOCATION_NOT_FOUND });
         res.json({ message: MESSAGES.STOCK_LOCATION_EDIT_SUCESS });
     });
 });
@@ -83,14 +81,18 @@ router.put('/:id', (req, res) => {
 /**
  * Remove o Local de estoque correspondente ao ID informado.
  */
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     const { id } = req.params;
+
+    const existsProductStock = await checkRegisterExists('stock_location_id', id);
+    if (existsProductStock) {
+        return res.status(RETURN_CODES.INTERNAL_SERVER_ERROR)
+            .json({ message: MESSAGES.PRODUCT_CANNOT_DELETE_STOCK_EXISTS });
+    }
+
     stockLocationModel.deleteStockLocation(id, (err) => {
-        if (err) return res.status(RETURN_CODES.INTERNAL_SERVER_ERROR)
-            .json({ message: err.message });
-        if (results.length === 0)
-            return res.status(RETURN_CODES.NOT_FOUND)
-                .json({ message: MESSAGES.STOCK_LOCATION_NOT_FOUND });
+        if (err)
+            return res.status(RETURN_CODES.INTERNAL_SERVER_ERROR).json({ message: err.message });
         res.json({ message: MESSAGES.STOCK_LOCATION_DELETE_SUCESS });
     });
 });

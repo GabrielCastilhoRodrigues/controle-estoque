@@ -22,6 +22,22 @@ function checkIdExists(tableName, id) {
             resolve(results[0].count > 0);
         });
     });
+};
+
+function checkRegisterExists(columnName, id) {
+    return new Promise((resolve, reject) => {
+        const sql = `SELECT COUNT(*) AS count FROM product_stock WHERE ${columnName} = ?`;
+        connection.query(sql, [id], (err, results) => {
+            if (err) {
+                return reject(err);
+            }
+
+            resolve(results[0].count > 0);
+        });
+    });
 }
 
-module.exports = checkIdExists;
+module.exports = {
+    checkIdExists,
+    checkRegisterExists
+};

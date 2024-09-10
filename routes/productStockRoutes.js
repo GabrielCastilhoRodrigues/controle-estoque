@@ -5,7 +5,8 @@ const connection = require('../config/db');
 const productStockModel = require('../models/productStock');
 const { productStockSchema } = require('../validators/productStockValidator');
 const { ENTITIES, RETURN_CODES, MESSAGES } = require('../constants');
-const checkIdExists = require('../validators/checkExistense');
+const { checkIdExists } = require('../validators/checkExistense');
+const filterFields = require('../validators/filterFields');
 
 /**
  * Realiza a validação dos campos do Estoque do Produto.
@@ -25,6 +26,7 @@ const validateProductSctock = (req, res, next) => {
     if (error) {
         return res.status(RETURN_CODES.BAD_REQUEST).json({ message: error.details[0].message });
     }
+
     next();
 };
 
@@ -100,8 +102,8 @@ router.get('/:id', (req, res) => {
 router.delete('/:id', (req, res) => {
     const { id } = req.params;
     productStockModel.deleteProductStocks(id, (err) => {
-        if (err) return res.status(RETURN_CODES.INTERNAL_SERVER_ERROR)
-            .json({ message: err.message });
+        if (err) 
+            return res.status(RETURN_CODES.INTERNAL_SERVER_ERROR).json({ message: err.message });
         res.json({ message: MESSAGES.PRODUCT_STOCK_DELETE_SUCESS });
     });
 });
